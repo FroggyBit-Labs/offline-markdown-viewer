@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline Markdown Viewer (OMV)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="mdr-page">
+  <div id="welcome" class="mdr-welcome">
+    <h1>Offline Markdown Viewer (OMV)</h1>
+    <p data-i18n="welcome_intro"></p>
+    <label class="mdr-drop" id="drop" tabindex="0">
+      <strong data-i18n="drop_title"></strong><br><span data-i18n="drop_or"></span>
+      <input id="file" type="file" accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain" hidden>
+    </label>
+    <p id="error" class="mdr-error" role="alert" hidden></p>
+  </div>
+  <div id="root"></div>
+  <script src="../vendor/purify.min.js"></script>
+  <script src="../vendor/marked.umd.js"></script>
+  <script src="../vendor/mermaid.min.js"></script>
+  <script src="i18n.js"></script>
+  <script src="render.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

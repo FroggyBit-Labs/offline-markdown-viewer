@@ -1,0 +1,351 @@
+{
+  "extDescription": {
+    "message": "Visor de Markdown y Mermaid sin conexión para Chromium. 100 % local y autónomo: sin red, sin cuenta, sin telemetría."
+  },
+  "actionTitle": {
+    "message": "Abrir el visor de Markdown"
+  },
+  "welcome_intro": {
+    "message": "Renderizado de Markdown y Mermaid 100 % local: sin envío de datos ni recursos remotos."
+  },
+  "drop_title": {
+    "message": "Arrastre un archivo .md aquí"
+  },
+  "drop_or": {
+    "message": "o haga clic para seleccionarlo"
+  },
+  "error_not_text": {
+    "message": "“$P1$” no es un archivo de texto ni Markdown (.md, .markdown, .mdown, .txt).",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_too_big": {
+    "message": "“$P1$” es demasiado grande (más de 20 MB).",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_binary": {
+    "message": "“$P1$” parece ser un archivo binario.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_read": {
+    "message": "No se pudo leer “$P1$”.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "skip_link": {
+    "message": "Ir al contenido"
+  },
+  "btn_resume": {
+    "message": "Reanudar"
+  },
+  "btn_resume_title": {
+    "message": "Ir al último marcador colocado"
+  },
+  "btn_pins": {
+    "message": "Marcadores ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "btn_lines": {
+    "message": "Líneas"
+  },
+  "btn_lines_title": {
+    "message": "Mostrar números de línea y permitir marcar"
+  },
+  "btn_source": {
+    "message": "Fuente"
+  },
+  "btn_rendered": {
+    "message": "Renderizado"
+  },
+  "btn_theme_light": {
+    "message": "Tema claro"
+  },
+  "btn_theme_dark": {
+    "message": "Tema oscuro"
+  },
+  "btn_appearance": {
+    "message": "Apariencia"
+  },
+  "btn_print": {
+    "message": "Imprimir"
+  },
+  "btn_reset": {
+    "message": "Restablecer"
+  },
+  "btn_clear_all": {
+    "message": "Borrar todo"
+  },
+  "btn_remove": {
+    "message": "Quitar"
+  },
+  "field_preset": {
+    "message": "Preajuste"
+  },
+  "field_size": {
+    "message": "Tamaño del texto"
+  },
+  "field_leading": {
+    "message": "Interlineado"
+  },
+  "field_width": {
+    "message": "Ancho del contenido"
+  },
+  "field_font": {
+    "message": "Fuente"
+  },
+  "spacing_label": {
+    "message": "Espaciado aumentado (letras, palabras, párrafos)"
+  },
+  "color_bg": {
+    "message": "Fondo"
+  },
+  "color_fg": {
+    "message": "Texto"
+  },
+  "color_muted": {
+    "message": "Texto secundario"
+  },
+  "color_border": {
+    "message": "Bordes"
+  },
+  "color_soft": {
+    "message": "Fondo secundario"
+  },
+  "color_link": {
+    "message": "Enlaces"
+  },
+  "color_accent": {
+    "message": "Acento"
+  },
+  "color_codebg": {
+    "message": "Fondo del código"
+  },
+  "color_codefg": {
+    "message": "Texto del código"
+  },
+  "group_classic": {
+    "message": "Clásicos"
+  },
+  "group_soft_light": {
+    "message": "Suaves, claros"
+  },
+  "group_soft_dark": {
+    "message": "Suaves, oscuros"
+  },
+  "group_a11y": {
+    "message": "Accesibilidad"
+  },
+  "preset_custom": {
+    "message": "Personalizado"
+  },
+  "preset_light": {
+    "message": "Claro"
+  },
+  "preset_dark": {
+    "message": "Oscuro"
+  },
+  "preset_sepia": {
+    "message": "Sepia"
+  },
+  "preset_contrast": {
+    "message": "Alto contraste (blanco sobre negro)"
+  },
+  "preset_yellow": {
+    "message": "Amarillo sobre negro"
+  },
+  "preset_soft": {
+    "message": "Confort (crema, dislexia/fotosensibilidad)"
+  },
+  "preset_brume": {
+    "message": "Niebla (gris azulado)"
+  },
+  "preset_ocean": {
+    "message": "Océano (verde agua)"
+  },
+  "preset_rose": {
+    "message": "Rosa (cálido)"
+  },
+  "preset_nord": {
+    "message": "Nord (azul polar)"
+  },
+  "preset_foret": {
+    "message": "Bosque (verde profundo)"
+  },
+  "preset_crepuscule": {
+    "message": "Crepúsculo (violeta)"
+  },
+  "preset_cafe": {
+    "message": "Café (marrón cálido)"
+  },
+  "font_sans": {
+    "message": "Sans-serif"
+  },
+  "font_serif": {
+    "message": "Serif"
+  },
+  "font_mono": {
+    "message": "Monoespaciada"
+  },
+  "font_legible": {
+    "message": "Legibilidad (Verdana / Tahoma)"
+  },
+  "contrast_title": {
+    "message": "Contraste (WCAG AA)"
+  },
+  "contrast_text": {
+    "message": "Texto / fondo"
+  },
+  "contrast_muted": {
+    "message": "Texto secundario / fondo"
+  },
+  "contrast_link": {
+    "message": "Enlaces / fondo"
+  },
+  "contrast_code": {
+    "message": "Código / fondo del código"
+  },
+  "contrast_border": {
+    "message": "Bordes / fondo"
+  },
+  "contrast_line": {
+    "message": "$P1$: $P2$:1 $P3$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      },
+      "P2": {
+        "content": "$2"
+      },
+      "P3": {
+        "content": "$3"
+      }
+    }
+  },
+  "contrast_pass": {
+    "message": "(conforme)"
+  },
+  "contrast_fail": {
+    "message": "(insuficiente, mín. $P1$:1)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pins_title": {
+    "message": "Marcadores de este documento"
+  },
+  "pins_hint": {
+    "message": "Active «Líneas» y haga clic en un número para marcar la línea. Use las flechas arriba/abajo para moverse entre números."
+  },
+  "pins_empty": {
+    "message": "Ningún marcador."
+  },
+  "pin_item": {
+    "message": "Línea $P1$: $P2$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      },
+      "P2": {
+        "content": "$2"
+      }
+    }
+  },
+  "pin_item_empty": {
+    "message": "(vacío)"
+  },
+  "pin_add_aria": {
+    "message": "Marcar la línea $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pin_remove_aria": {
+    "message": "Quitar el marcador de la línea $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toc_label": {
+    "message": "Índice"
+  },
+  "gutter_label": {
+    "message": "Números de línea y marcadores"
+  },
+  "link_external": {
+    "message": "Enlace externo (se abre en una pestaña nueva)"
+  },
+  "blocked_remote": {
+    "message": "Recurso remoto bloqueado: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "task_done": {
+    "message": "Tarea completada"
+  },
+  "task_todo": {
+    "message": "Tarea pendiente"
+  },
+  "mermaid_aria": {
+    "message": "Diagrama Mermaid $P1$. Alternativa textual: consulte el código del diagrama más abajo.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "mermaid_alt_summary": {
+    "message": "Alternativa textual del diagrama $P1$ (código)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "mermaid_invalid": {
+    "message": "Diagrama Mermaid no válido: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "copy": {
+    "message": "Copiar"
+  },
+  "copied": {
+    "message": "Copiado"
+  },
+  "copy_failed": {
+    "message": "Error"
+  },
+  "copy_aria": {
+    "message": "Copiar el bloque de código"
+  }
+}

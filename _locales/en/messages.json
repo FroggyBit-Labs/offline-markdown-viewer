@@ -1,0 +1,351 @@
+{
+  "extDescription": {
+    "message": "Offline Markdown and Mermaid viewer for Chromium browsers. 100% local and self-contained: no network, no account, no telemetry."
+  },
+  "actionTitle": {
+    "message": "Open the Markdown viewer"
+  },
+  "welcome_intro": {
+    "message": "Markdown and Mermaid rendering, 100% local: no data sent, no remote resources."
+  },
+  "drop_title": {
+    "message": "Drop a .md file here"
+  },
+  "drop_or": {
+    "message": "or click to select one"
+  },
+  "error_not_text": {
+    "message": "“$P1$” is not a text or Markdown file (.md, .markdown, .mdown, .txt).",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_too_big": {
+    "message": "“$P1$” is too large (over 20 MB).",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_binary": {
+    "message": "“$P1$” looks like a binary file.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_read": {
+    "message": "Could not read “$P1$”.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "skip_link": {
+    "message": "Skip to content"
+  },
+  "btn_resume": {
+    "message": "Resume"
+  },
+  "btn_resume_title": {
+    "message": "Go to the last pin you set"
+  },
+  "btn_pins": {
+    "message": "Pins ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "btn_lines": {
+    "message": "Lines"
+  },
+  "btn_lines_title": {
+    "message": "Show line numbers and allow pinning"
+  },
+  "btn_source": {
+    "message": "Source"
+  },
+  "btn_rendered": {
+    "message": "Rendered"
+  },
+  "btn_theme_light": {
+    "message": "Light theme"
+  },
+  "btn_theme_dark": {
+    "message": "Dark theme"
+  },
+  "btn_appearance": {
+    "message": "Appearance"
+  },
+  "btn_print": {
+    "message": "Print"
+  },
+  "btn_reset": {
+    "message": "Reset"
+  },
+  "btn_clear_all": {
+    "message": "Clear all"
+  },
+  "btn_remove": {
+    "message": "Remove"
+  },
+  "field_preset": {
+    "message": "Preset"
+  },
+  "field_size": {
+    "message": "Text size"
+  },
+  "field_leading": {
+    "message": "Line spacing"
+  },
+  "field_width": {
+    "message": "Content width"
+  },
+  "field_font": {
+    "message": "Font"
+  },
+  "spacing_label": {
+    "message": "Increased spacing (letters, words, paragraphs)"
+  },
+  "color_bg": {
+    "message": "Background"
+  },
+  "color_fg": {
+    "message": "Text"
+  },
+  "color_muted": {
+    "message": "Secondary text"
+  },
+  "color_border": {
+    "message": "Borders"
+  },
+  "color_soft": {
+    "message": "Secondary background"
+  },
+  "color_link": {
+    "message": "Links"
+  },
+  "color_accent": {
+    "message": "Accent"
+  },
+  "color_codebg": {
+    "message": "Code background"
+  },
+  "color_codefg": {
+    "message": "Code text"
+  },
+  "group_classic": {
+    "message": "Classic"
+  },
+  "group_soft_light": {
+    "message": "Soft, light"
+  },
+  "group_soft_dark": {
+    "message": "Soft, dark"
+  },
+  "group_a11y": {
+    "message": "Accessibility"
+  },
+  "preset_custom": {
+    "message": "Custom"
+  },
+  "preset_light": {
+    "message": "Light"
+  },
+  "preset_dark": {
+    "message": "Dark"
+  },
+  "preset_sepia": {
+    "message": "Sepia"
+  },
+  "preset_contrast": {
+    "message": "High contrast (white on black)"
+  },
+  "preset_yellow": {
+    "message": "Yellow on black"
+  },
+  "preset_soft": {
+    "message": "Comfort (cream, dyslexia/photosensitivity)"
+  },
+  "preset_brume": {
+    "message": "Mist (blue-grey)"
+  },
+  "preset_ocean": {
+    "message": "Ocean (sea green)"
+  },
+  "preset_rose": {
+    "message": "Rosé (warm)"
+  },
+  "preset_nord": {
+    "message": "Nord (polar blue)"
+  },
+  "preset_foret": {
+    "message": "Forest (deep green)"
+  },
+  "preset_crepuscule": {
+    "message": "Twilight (violet)"
+  },
+  "preset_cafe": {
+    "message": "Coffee (warm brown)"
+  },
+  "font_sans": {
+    "message": "Sans-serif"
+  },
+  "font_serif": {
+    "message": "Serif"
+  },
+  "font_mono": {
+    "message": "Monospace"
+  },
+  "font_legible": {
+    "message": "Readability (Verdana / Tahoma)"
+  },
+  "contrast_title": {
+    "message": "Contrast (WCAG AA)"
+  },
+  "contrast_text": {
+    "message": "Text / background"
+  },
+  "contrast_muted": {
+    "message": "Secondary text / background"
+  },
+  "contrast_link": {
+    "message": "Links / background"
+  },
+  "contrast_code": {
+    "message": "Code / code background"
+  },
+  "contrast_border": {
+    "message": "Borders / background"
+  },
+  "contrast_line": {
+    "message": "$P1$: $P2$:1 $P3$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      },
+      "P2": {
+        "content": "$2"
+      },
+      "P3": {
+        "content": "$3"
+      }
+    }
+  },
+  "contrast_pass": {
+    "message": "(compliant)"
+  },
+  "contrast_fail": {
+    "message": "(insufficient, min. $P1$:1)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pins_title": {
+    "message": "Pins for this document"
+  },
+  "pins_hint": {
+    "message": "Turn on “Lines”, then click a number to pin that line. Use the up and down arrows to move between numbers."
+  },
+  "pins_empty": {
+    "message": "No pins."
+  },
+  "pin_item": {
+    "message": "Line $P1$: $P2$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      },
+      "P2": {
+        "content": "$2"
+      }
+    }
+  },
+  "pin_item_empty": {
+    "message": "(empty)"
+  },
+  "pin_add_aria": {
+    "message": "Pin line $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pin_remove_aria": {
+    "message": "Remove the pin from line $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toc_label": {
+    "message": "Table of contents"
+  },
+  "gutter_label": {
+    "message": "Line numbers and pins"
+  },
+  "link_external": {
+    "message": "External link (opens in a new tab)"
+  },
+  "blocked_remote": {
+    "message": "Remote resource blocked: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "task_done": {
+    "message": "Task completed"
+  },
+  "task_todo": {
+    "message": "Task to do"
+  },
+  "mermaid_aria": {
+    "message": "Mermaid diagram $P1$. Text alternative: see the diagram code below.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "mermaid_alt_summary": {
+    "message": "Text alternative for diagram $P1$ (code)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "mermaid_invalid": {
+    "message": "Invalid Mermaid diagram: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "copy_failed": {
+    "message": "Failed"
+  },
+  "copy_aria": {
+    "message": "Copy code block"
+  }
+}

@@ -1,0 +1,2 @@
+# Bundled libraries: LF line endings enforced, so the hashes in VENDOR.md stay valid on any machine
+vendor/** text eol=lf

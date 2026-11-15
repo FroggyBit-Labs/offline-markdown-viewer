@@ -1,0 +1,351 @@
+{
+  "extDescription": {
+    "message": "Lecteur Markdown et Mermaid hors ligne pour Chromium. 100 % local et autonome : sans réseau, sans compte, sans télémétrie."
+  },
+  "actionTitle": {
+    "message": "Ouvrir le lecteur Markdown"
+  },
+  "welcome_intro": {
+    "message": "Rendu Markdown et Mermaid, 100 % local : aucun envoi de données, aucune ressource distante."
+  },
+  "drop_title": {
+    "message": "Glissez un fichier .md ici"
+  },
+  "drop_or": {
+    "message": "ou cliquez pour le sélectionner"
+  },
+  "error_not_text": {
+    "message": "« $P1$ » n'est pas un fichier texte ou Markdown (.md, .markdown, .mdown, .txt).",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_too_big": {
+    "message": "« $P1$ » est trop volumineux (plus de 20 Mo).",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_binary": {
+    "message": "« $P1$ » semble être un fichier binaire.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_read": {
+    "message": "Lecture impossible de « $P1$ ».",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "skip_link": {
+    "message": "Aller au contenu"
+  },
+  "btn_resume": {
+    "message": "Reprendre"
+  },
+  "btn_resume_title": {
+    "message": "Aller au dernier point d'étape posé"
+  },
+  "btn_pins": {
+    "message": "Étapes ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "btn_lines": {
+    "message": "Lignes"
+  },
+  "btn_lines_title": {
+    "message": "Afficher les numéros de ligne et permettre de punaiser"
+  },
+  "btn_source": {
+    "message": "Source"
+  },
+  "btn_rendered": {
+    "message": "Rendu"
+  },
+  "btn_theme_light": {
+    "message": "Thème clair"
+  },
+  "btn_theme_dark": {
+    "message": "Thème sombre"
+  },
+  "btn_appearance": {
+    "message": "Apparence"
+  },
+  "btn_print": {
+    "message": "Imprimer"
+  },
+  "btn_reset": {
+    "message": "Réinitialiser"
+  },
+  "btn_clear_all": {
+    "message": "Tout effacer"
+  },
+  "btn_remove": {
+    "message": "Retirer"
+  },
+  "field_preset": {
+    "message": "Préréglage"
+  },
+  "field_size": {
+    "message": "Taille du texte"
+  },
+  "field_leading": {
+    "message": "Interligne"
+  },
+  "field_width": {
+    "message": "Largeur du contenu"
+  },
+  "field_font": {
+    "message": "Police"
+  },
+  "spacing_label": {
+    "message": "Espacement renforcé (lettres, mots, paragraphes)"
+  },
+  "color_bg": {
+    "message": "Fond"
+  },
+  "color_fg": {
+    "message": "Texte"
+  },
+  "color_muted": {
+    "message": "Texte secondaire"
+  },
+  "color_border": {
+    "message": "Bordures"
+  },
+  "color_soft": {
+    "message": "Fond secondaire"
+  },
+  "color_link": {
+    "message": "Liens"
+  },
+  "color_accent": {
+    "message": "Accent"
+  },
+  "color_codebg": {
+    "message": "Fond du code"
+  },
+  "color_codefg": {
+    "message": "Texte du code"
+  },
+  "group_classic": {
+    "message": "Classiques"
+  },
+  "group_soft_light": {
+    "message": "Doux, clairs"
+  },
+  "group_soft_dark": {
+    "message": "Doux, sombres"
+  },
+  "group_a11y": {
+    "message": "Accessibilité"
+  },
+  "preset_custom": {
+    "message": "Personnalisé"
+  },
+  "preset_light": {
+    "message": "Clair"
+  },
+  "preset_dark": {
+    "message": "Sombre"
+  },
+  "preset_sepia": {
+    "message": "Sépia"
+  },
+  "preset_contrast": {
+    "message": "Contraste élevé (blanc sur noir)"
+  },
+  "preset_yellow": {
+    "message": "Jaune sur noir"
+  },
+  "preset_soft": {
+    "message": "Confort (crème, dyslexie/photosensibilité)"
+  },
+  "preset_brume": {
+    "message": "Brume (gris bleuté)"
+  },
+  "preset_ocean": {
+    "message": "Océan (vert d'eau)"
+  },
+  "preset_rose": {
+    "message": "Rosé (chaud)"
+  },
+  "preset_nord": {
+    "message": "Nord (bleu polaire)"
+  },
+  "preset_foret": {
+    "message": "Forêt (vert profond)"
+  },
+  "preset_crepuscule": {
+    "message": "Crépuscule (violet)"
+  },
+  "preset_cafe": {
+    "message": "Café (brun chaud)"
+  },
+  "font_sans": {
+    "message": "Sans-serif"
+  },
+  "font_serif": {
+    "message": "Serif"
+  },
+  "font_mono": {
+    "message": "Monospace"
+  },
+  "font_legible": {
+    "message": "Lisibilité (Verdana / Tahoma)"
+  },
+  "contrast_title": {
+    "message": "Contraste (WCAG AA)"
+  },
+  "contrast_text": {
+    "message": "Texte / fond"
+  },
+  "contrast_muted": {
+    "message": "Texte secondaire / fond"
+  },
+  "contrast_link": {
+    "message": "Liens / fond"
+  },
+  "contrast_code": {
+    "message": "Code / fond du code"
+  },
+  "contrast_border": {
+    "message": "Bordures / fond"
+  },
+  "contrast_line": {
+    "message": "$P1$ : $P2$:1 $P3$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      },
+      "P2": {
+        "content": "$2"
+      },
+      "P3": {
+        "content": "$3"
+      }
+    }
+  },
+  "contrast_pass": {
+    "message": "(conforme)"
+  },
+  "contrast_fail": {
+    "message": "(insuffisant, min. $P1$:1)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pins_title": {
+    "message": "Points d'étape de ce document"
+  },
+  "pins_hint": {
+    "message": "Activez « Lignes », puis cliquez sur un numéro pour punaiser la ligne. Flèches haut/bas pour passer d'un numéro à l'autre."
+  },
+  "pins_empty": {
+    "message": "Aucun point d'étape."
+  },
+  "pin_item": {
+    "message": "Ligne $P1$ : $P2$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      },
+      "P2": {
+        "content": "$2"
+      }
+    }
+  },
+  "pin_item_empty": {
+    "message": "(vide)"
+  },
+  "pin_add_aria": {
+    "message": "Punaiser la ligne $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pin_remove_aria": {
+    "message": "Retirer le point d'étape de la ligne $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toc_label": {
+    "message": "Sommaire"
+  },
+  "gutter_label": {
+    "message": "Numéros de ligne et points d'étape"
+  },
+  "link_external": {
+    "message": "Lien externe (nouvel onglet)"
+  },
+  "blocked_remote": {
+    "message": "Ressource distante bloquée : $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "task_done": {
+    "message": "Tâche terminée"
+  },
+  "task_todo": {
+    "message": "Tâche à faire"
+  },
+  "mermaid_aria": {
+    "message": "Diagramme Mermaid $P1$. Alternative textuelle : voir le code du diagramme ci-dessous.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "mermaid_alt_summary": {
+    "message": "Alternative textuelle du diagramme $P1$ (code)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "mermaid_invalid": {
+    "message": "Diagramme Mermaid invalide : $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "copy": {
+    "message": "Copier"
+  },
+  "copied": {
+    "message": "Copié"
+  },
+  "copy_failed": {
+    "message": "Échec"
+  },
+  "copy_aria": {
+    "message": "Copier le bloc de code"
+  }
+}
