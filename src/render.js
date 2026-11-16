@@ -119,25 +119,61 @@
     return rest === null ? null : splitUnc(rest);
   }
   function uncToFileUrl(u) { return 'file://' + u.host + '/' + u.segs.map(encodeURIComponent).join('/'); }
+  // The list is parsed once per policy object, not once per image checked.
+  const parsedEntries = new WeakMap();
+  function entriesOf(net) {
+    let list = parsedEntries.get(net);
+    if (!list) { list = net.allow.map(parseAllowEntry).filter(Boolean); parsedEntries.set(net, list); }
+    return list;
+  }
   function isAllowedUnc(u, net) {
     if (!u || !net || !net.enabled) return false;
-    return net.allow.some((text) => {
-      const e = parseAllowEntry(text);
-      return !!e && e.kind === 'unc' && e.host === u.host && e.segs.every((s, i) => u.segs[i] === s);
-    });
+    return entriesOf(net).some((e) => e.kind === 'unc' && e.host === u.host && e.segs.every((s, i) => u.segs[i] === s));
   }
-  // A Markdown image written with a Windows share, ![x](\\host\share\a.jpg), loses its backslashes when
-  // Markdown reads it (a backslash escapes the next one). Rewrite those destinations to file:// addresses
-  // before parsing. No line is added or removed, so line numbers stay exact.
-  function fixUncImages(text) {
-    return text.replace(/(!\[[^\]\n]*\]\()(<)?(\\\\[^)>\n]+)(>)?(\))/g, (m, open, lt, unc, gt, close) => {
-      // Written the Markdown way, with every backslash doubled (\\\\host\\share\\a.jpg): undo the doubling first.
-      const plain = /^\\\\\\\\/.test(unc) ? unc.replace(/\\\\/g, '\\') : unc;
-      const u = splitUnc(plain.slice(2).replace(/\\/g, '/'));
-      // An invalid share address (".." etc.) is replaced by a harmless unlisted one: it is shown as blocked,
-      // not as a broken relative image.
-      return open + '<' + (u ? uncToFileUrl(u) : 'file://invalid.invalid/blocked') + '>' + close;
+  // File URL of a Windows drive path (C:\dir\a#1.png or C:/dir/a.png). Each segment is decoded first (it may
+  // already be percent-encoded, e.g. "My%20Dir") then encoded with encodeURIComponent: encodeURI would leave
+  // "#" and "?" alone and the address would be cut there.
+  function driveToFileUrl(p) {
+    const segs = p.slice(2).split(/[\\/]+/).filter(Boolean).map((s) => {
+      try { s = decodeURIComponent(s); } catch (e) { /* a literal "%": keep it as is */ }
+      return encodeURIComponent(s);
     });
+    return 'file:///' + p.slice(0, 2) + '/' + segs.join('/');
+  }
+  // Destination of a Markdown image, taken from its raw source text ("![alt](dest "title")" or
+  // "![alt](<dest>)"), before Markdown's backslash escapes damaged it. null if it cannot be read.
+  function rawImageDest(raw) {
+    const open = raw.indexOf('](');
+    if (!raw.startsWith('![') || open < 0 || !raw.endsWith(')')) return null;
+    const inner = raw.slice(open + 2, -1).trim();
+    if (inner.startsWith('<')) {
+      const close = inner.indexOf('>');
+      return close > 0 ? inner.slice(1, close) : null;
+    }
+    const m = /^\S+/.exec(inner);
+    return m ? m[0] : null;
+  }
+  // Markdown reads a backslash as an escape, so ![x](\\host\share\a.jpg) and ![x](C:\_img\a.png) reach the
+  // renderer damaged. For those two forms, the image address is rebuilt from the raw source as a file:// URL.
+  // This works on the image tokens found by the Markdown parser: code spans and code blocks (fenced,
+  // indented, inside quotes or lists) contain no image token, so they are never touched.
+  function localImageUrl(dest) {
+    if (/^\\\\/.test(dest)) {
+      // Written the Markdown way, with every backslash doubled (\\\\host\\share\\a.jpg): undo the doubling first.
+      const flat = /^\\\\\\\\/.test(dest) ? dest.replace(/\\\\/g, '\\') : dest;
+      const u = splitUnc(flat.slice(2).replace(/\\/g, '/'));
+      // An invalid share address (".." etc.) becomes a harmless unlisted one: it is shown as blocked,
+      // not as a broken relative image.
+      return u ? uncToFileUrl(u) : 'file://invalid.invalid/blocked';
+    }
+    if (/^[A-Za-z]:\\/.test(dest)) return driveToFileUrl(dest);
+    return null;
+  }
+  function fixImageToken(t) {
+    if (t.type !== 'image') return;
+    const dest = rawImageDest(t.raw || '');
+    const url = dest && localImageUrl(dest);
+    if (url) t.href = url;
   }
   function parseAllowEntry(line) {
     const s = String(line).trim();
@@ -178,9 +214,8 @@
     const scheme = u.protocol.slice(0, -1);
     const host = u.hostname.toLowerCase();
     const port = u.port || (scheme === 'https' ? '443' : '80');
-    return net.allow.some((text) => {
-      const e = parseAllowEntry(text);
-      if (!e || e.kind !== 'web' || e.scheme !== scheme) return false;
+    return entriesOf(net).some((e) => {
+      if (e.kind !== 'web' || e.scheme !== scheme) return false;
       if ((e.port || (scheme === 'https' ? '443' : '80')) !== port) return false;
       if (e.wild ? !host.endsWith('.' + e.host) : host !== e.host) return false;
       if (!e.path) return true;
@@ -190,10 +225,7 @@
   // CSP of a file:// page: local and embedded images, plus the sites the user listed (when enabled).
   function contentCsp(settings) {
     // Only web addresses go into the CSP; network shares cannot be told apart from local files by a CSP.
-    const hosts = (settings && settings.net && settings.net.enabled ? settings.net.allow : []).filter((t) => {
-      const e = parseAllowEntry(t);
-      return !!e && e.kind === 'web';
-    });
+    const hosts = settings && settings.net && settings.net.enabled ? entriesOf(settings.net).filter((e) => e.kind === 'web').map((e) => e.text) : [];
     return "default-src 'none'; img-src file: data: blob:" + hosts.map((h) => ' ' + h).join('') +
       "; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'";
   }
@@ -245,28 +277,17 @@
       try { chrome.storage.local.get(key, (r) => resolve(r ? (key === null ? r : r[key]) : undefined)); } catch (e) { resolve(undefined); }
     });
   }
-  // Values this tab has written recently, per key (serialized). The storage change events caused by our
-  // own writes arrive later and must not be applied back: if the user acts between two echoes, an old
-  // echo would restore an outdated state and the next write would erase the newer change.
-  const ownWrites = new Map();
-  function noteOwnWrite(key, value) {
-    const list = ownWrites.get(key) || [];
-    list.push(JSON.stringify(value === undefined ? null : value));
-    if (list.length > 50) list.shift();
-    ownWrites.set(key, list);
-  }
-  function isOwnWrite(key, value) {
-    const list = ownWrites.get(key);
-    return !!list && list.includes(JSON.stringify(value === undefined ? null : value));
-  }
+  // Every value this tab writes carries its writer id (_w). The storage change events caused by our own
+  // writes come back later: they are recognized by that id and ignored, whatever their value and however late
+  // they arrive. A change from another tab never carries our id, so it is always applied.
+  const WRITER = 'w' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  function isOwnValue(v) { return !!v && typeof v === 'object' && v._w === WRITER; }
   function storageSet(key, value) {
-    noteOwnWrite(key, value);
     return new Promise((resolve) => {
       try { chrome.storage.local.set({ [key]: value }, () => resolve()); } catch (e) { resolve(); /* storage unavailable */ }
     });
   }
   function storageRemove(keys) {
-    [].concat(keys).forEach((k) => noteOwnWrite(k, null));
     return new Promise((resolve) => {
       try { chrome.storage.local.remove(keys, () => resolve()); } catch (e) { resolve(); }
     });
@@ -284,12 +305,14 @@
     s.net = normalizeNet(await storageGet(NET_KEY));     // separate key: never overwritten by appearance changes
     return s;
   }
-  function saveSettings(s) { return queueWrite(() => storageSet(KEY, normalize(s))); }
+  function saveSettings(s) { return queueWrite(() => storageSet(KEY, Object.assign(normalize(s), { _w: WRITER }))); }
   function saveNet(net) { return queueWrite(() => storageSet(NET_KEY, normalizeNet(net))); }
 
-  // Pins: one storage key per document ("omv-pins:<document>" -> [ { line, text, t } ]).
-  // Two tabs on two different documents therefore never write the same key.
+  // Pins: one storage key per document ("omv-pins:<document>" -> { _w, pins: [ { line, text, t } ] }).
+  // Two tabs on two different documents therefore never write the same key. A bare array (older format,
+  // or a value written by hand) is still read.
   function pinsKey(docKey) { return PINS_KEY + ':' + docKey; }
+  function pinsOf(raw) { return Array.isArray(raw) ? raw : (raw && Array.isArray(raw.pins) ? raw.pins : []); }
   function cleanPins(list) {
     if (!Array.isArray(list)) return [];
     return list
@@ -298,22 +321,22 @@
       .slice(0, MAX_PINS_PER_DOC);
   }
   async function loadPins(docKey) {
-    return cleanPins(await storageGet(pinsKey(docKey)));
+    return cleanPins(pinsOf(await storageGet(pinsKey(docKey))));
   }
+  // An emptied list is written (not removed) so that its change event also carries our writer id.
   function savePins(docKey, pins) {
     const key = pinsKey(docKey);
     const value = cleanPins(pins);
     return queueWrite(async () => {
-      if (!value.length) return storageRemove(key);
       const isNew = (await storageGet(key)) === undefined;
-      await storageSet(key, value);
+      await storageSet(key, { _w: WRITER, pins: value });
       // Beyond MAX_DOCS documents, the least recently used ones are forgotten.
       // Only checked when a new document is added: it reads all pins, so not on every click.
       if (!isNew) return;
       const all = (await storageGet(null)) || {};
       const keys = Object.keys(all).filter((k) => k.startsWith(PINS_KEY + ':'));
       if (keys.length > MAX_DOCS) {
-        const lastUse = (k) => Math.max(0, ...cleanPins(all[k]).map((p) => p.t));
+        const lastUse = (k) => Math.max(0, ...cleanPins(pinsOf(all[k])).map((p) => p.t));
         const old = keys.filter((k) => k !== key).sort((a, b) => lastUse(a) - lastUse(b)).slice(0, keys.length - MAX_DOCS);
         if (old.length) await storageRemove(old);
       }
@@ -358,7 +381,10 @@
     if (hooked) return;
     hooked = true;
     DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
-      if (node.tagName !== 'IMG' || data.attrName !== 'src') return;
+      if (node.tagName !== 'IMG') return;
+      // This image had an address (src or srcset): if it ends up without one, say so (see placeholders).
+      if (data.attrName === 'src' || data.attrName === 'srcset') node.setAttribute('data-omv-src', '1');
+      if (data.attrName !== 'src') return;
       let v = normalizeUrl(data.attrValue);
       if (/^(?:%5C|\\){2}/i.test(v)) v = v.replace(/%5C/gi, '\\');      // Markdown percent-encodes backslashes
       // Network share (\\host\share\x.jpg, file://host/share/x.jpg): shown only on a file:// page, only if the
@@ -377,7 +403,7 @@
         return;
       }
       let local = null;
-      if (/^[a-zA-Z]:[\\/]/.test(v)) local = 'file:///' + encodeURI(v.replace(/\\/g, '/'));   // Windows drive path
+      if (/^[a-zA-Z]:[\\/]/.test(v)) local = driveToFileUrl(v);                                 // Windows drive path
       else if (/^file:/i.test(v) && !isRemoteFile(v)) local = v;                                // file:/// (no host)
       if (local === null) return;
       // forceKeepAttr keeps the attribute as it already is in the DOM: the rewritten value is set directly.
@@ -504,9 +530,9 @@
   function renderBlocks(text, article) {
     const m = FRONT.exec(text);
     if (m) text = '```yaml\n' + m[1] + '\n```\n' + text.slice(m[0].length);   // same number of lines
-    text = fixUncImages(text);                  // ![x](\\host\share\a.jpg) -> file://host/share/a.jpg (same lines)
     const opts = { gfm: true, breaks: false };
     const tokens = marked.lexer(text, opts);
+    marked.walkTokens(tokens, fixImageToken);   // ![x](\\host\share\a.jpg), ![x](C:\a.png) -> file:// addresses
     const attr = 'data-omv-' + Math.random().toString(36).slice(2, 10);
     const parts = [];
     const blocks = [];
@@ -539,7 +565,8 @@
     // Replace it with a readable, translated placeholder (the alt text stays available):
     //   remote  = blocked remote resource; local = local image the viewer page cannot load;
     //   removed = image whose address the sanitizer removed (javascript:, network share...).
-    tpl.content.querySelectorAll('img.mdr-blocked, img.mdr-unavailable, img:not([src])').forEach((img) => {
+    // An <img> the author wrote without any address is not touched: nothing was removed.
+    tpl.content.querySelectorAll('img.mdr-blocked, img.mdr-unavailable, img[data-omv-src]:not([src])').forEach((img) => {
       const alt = img.getAttribute('alt') || '';
       const kind = img.classList.contains('mdr-blocked') ? 'remote' : (img.classList.contains('mdr-unavailable') ? 'local' : 'removed');
       const key = { remote: 'blocked_image', local: 'local_image_unavailable', removed: 'image_removed' }[kind];
@@ -578,9 +605,13 @@
     return {
       startOnLoad: false,
       securityLevel: 'strict',
-      // Keys that a %%{init}%% directive of the document cannot change (no CSS or font injected).
+      // Keys that a %%{init}%% directive of the document cannot change (no CSS, font or HTML label injected).
       secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'suppressErrorRendering', 'maxEdges',
-        'themeCSS', 'themeVariables', 'fontFamily', 'altFontFamily'],
+        'themeCSS', 'themeVariables', 'fontFamily', 'altFontFamily', 'htmlLabels', 'flowchart'],
+      // Labels drawn as SVG text, not as HTML: a label can then never contain an <img> or any other element
+      // that would fetch something while Mermaid lays the diagram out in the page.
+      htmlLabels: false,
+      flowchart: { htmlLabels: false },
       theme: 'base',
       fontFamily: fontFamily,
       themeVariables: {
@@ -604,6 +635,28 @@
     };
   }
 
+  // Defense in depth for a rendered diagram: it never needs to fetch anything. The SVG is parsed inside a
+  // <template>, an inert document where nothing loads, and cleaned there before it enters the page:
+  // embedded images and frames are dropped, external references removed, and any url() other than an
+  // in-document reference (url(#id)) is neutralized in styles.
+  const EXTERNAL_URL = /url\(\s*(?!['"]?#)[^)]*\)/gi;
+  function cleanSvg(svg) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = svg;
+    const root = tpl.content;
+    root.querySelectorAll('image, img, feImage, iframe, object, embed, video, audio, source, link, script').forEach((n) => n.remove());
+    root.querySelectorAll('*').forEach((n) => {
+      for (const a of Array.from(n.attributes)) {
+        const name = a.name.toLowerCase();
+        if ((name === 'href' || name === 'xlink:href' || name === 'src') && n.tagName.toLowerCase() !== 'a' && !a.value.startsWith('#')) n.removeAttribute(a.name);
+        else if (EXTERNAL_URL.test(a.value)) n.setAttribute(a.name, a.value.replace(EXTERNAL_URL, 'none'));
+        EXTERNAL_URL.lastIndex = 0;
+      }
+    });
+    root.querySelectorAll('style').forEach((st) => { st.textContent = st.textContent.replace(EXTERNAL_URL, 'none'); });
+    return document.importNode(root, true);
+  }
+
   // isStale(): true if a newer render has started; we then stop without touching the DOM.
   async function renderMermaid(article, settings, isStale) {
     const blocks = article.querySelectorAll('pre > code.language-mermaid');
@@ -621,7 +674,7 @@
       try {
         const { svg } = await mermaid.render(id, code.textContent);
         const box = document.createElement('div');
-        box.innerHTML = svg;
+        box.append(cleanSvg(svg));
         const s = box.querySelector('svg');
         if (s) {
           s.setAttribute('role', 'img');
@@ -734,7 +787,10 @@
     };
     mounted.set(root, dispose);
 
-    const settings = await loadSettings();
+    // The caller may pass the settings it already used to build the page CSP: the list applied by the code and
+    // the list enforced by the browser then always come from the same read.
+    const settings = opts.settings || await loadSettings();
+    if (opts.net) settings.net = opts.net;      // e.g. the strict policy the page CSP was built with
     // The list is only honored on file:// pages, where the page CSP enforces it as well.
     netPolicy = allowLocalFiles ? settings.net : { enabled: false, allow: [] };
     const docKey = opts.docKey || opts.fileName || 'document';
@@ -831,24 +887,37 @@
       // details (NTLM) to that server when the image is requested.
       const chkConsentUnc = el('input', { type: 'checkbox' });
       const uncConsent = el('label', { className: 'mdr-check', hidden: true }, [chkConsentUnc, el('span', { textContent: msg('net_consent_unc') })]);
-      const hasUnc = () => txtAllow.value.split(/\r?\n/).some((l) => { const e = parseAllowEntry(l); return !!e && e.kind === 'unc'; });
-      txtAllow.addEventListener('input', () => { uncConsent.hidden = !hasUnc(); });
-      uncConsent.hidden = !hasUnc();
+      // What needs the user's consent: every entry when the option is off (it is being turned on), otherwise
+      // only the entries that are not already in the saved list. An unchanged list is not asked about again.
+      const parseForm = () => {
+        const entries = [];
+        let invalid = 0;
+        for (const line of txtAllow.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean)) {
+          const e = parseAllowEntry(line);
+          if (e) entries.push(e); else invalid++;
+        }
+        return { entries, invalid };
+      };
+      // "saved" is the stored policy: on Apply it is read again, so a tab opened before a change made
+      // elsewhere (e.g. the option turned off in another tab) cannot switch it back on without consent.
+      const needsConsent = (entries, saved) => (saved.enabled ? entries.filter((e) => !saved.allow.includes(e.text)) : entries);
+      const refreshUnc = () => { uncConsent.hidden = !needsConsent(parseForm().entries, settings.net).some((e) => e.kind === 'unc'); };
+      txtAllow.addEventListener('input', refreshUnc);
+      refreshUnc();
       const netStatus = el('p', { className: 'mdr-net-status' });
       netStatus.setAttribute('role', 'status');
       netStatus.setAttribute('aria-live', 'polite');
       const btnApply = el('button', { type: 'button', textContent: msg('net_apply') });
       btnApply.addEventListener('click', async () => {
-        const lines = txtAllow.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-        const list = [];
-        let invalid = 0;
-        for (const line of lines) { const e = parseAllowEntry(line); if (e) list.push(e.text); else invalid++; }
+        const { entries, invalid } = parseForm();
         if (invalid) { netStatus.textContent = msg('net_invalid', invalid); return; }       // never ignore a line silently
         const on = chkNet.checked;
-        if (on && !list.length) { netStatus.textContent = msg('net_need_site'); return; }   // no "allow everything"
-        if (on && !chkConsent.checked) { netStatus.textContent = msg('net_need_consent'); return; }
-        if (on && hasUnc() && !chkConsentUnc.checked) { netStatus.textContent = msg('net_need_consent_unc'); return; }
-        await saveNet({ enabled: on, allow: list });
+        if (on && !entries.length) { netStatus.textContent = msg('net_need_site'); return; }   // no "allow everything"
+        const saved = normalizeNet(await storageGet(NET_KEY));
+        const toConsent = on ? needsConsent(entries, saved) : [];
+        if (toConsent.length && !chkConsent.checked) { netStatus.textContent = msg('net_need_consent'); return; }
+        if (toConsent.some((e) => e.kind === 'unc') && !chkConsentUnc.checked) { netStatus.textContent = msg('net_need_consent_unc'); return; }
+        await saveNet({ enabled: on, allow: entries.map((e) => e.text) });
         location.reload();            // the page CSP is set at load: reload to apply the new list
       });
       netPanel.append(
@@ -1202,7 +1271,7 @@
     const myPinsKey = pinsKey(docKey);
     onStorage = (changes, area) => {
       if (area !== 'local' || ac.signal.aborted) return;
-      if (changes[KEY] && changes[KEY].newValue && !isOwnWrite(KEY, changes[KEY].newValue)) {
+      if (changes[KEY] && changes[KEY].newValue && !isOwnValue(changes[KEY].newValue)) {
         const next = normalize(changes[KEY].newValue);
         if (JSON.stringify(next) !== JSON.stringify(normalize(settings))) {
           const colorsChanged = JSON.stringify(next.colors) !== JSON.stringify(settings.colors) || next.font !== settings.font;
@@ -1211,8 +1280,8 @@
           else { applyStyle(); refreshMarks(); }
         }
       }
-      if (changes[myPinsKey] && !isOwnWrite(myPinsKey, changes[myPinsKey].newValue)) {
-        const next = cleanPins(changes[myPinsKey].newValue);
+      if (changes[myPinsKey] && !isOwnValue(changes[myPinsKey].newValue)) {
+        const next = cleanPins(pinsOf(changes[myPinsKey].newValue));
         if (JSON.stringify(next) !== JSON.stringify(pins)) { pins = next; refreshMarks(); }
       }
     };

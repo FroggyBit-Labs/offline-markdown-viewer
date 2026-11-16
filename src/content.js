@@ -15,7 +15,10 @@
 
   // Network lockdown of the page: no page script, and only local or embedded images, plus the sites the user
   // explicitly listed in "Remote images" (empty and switched off by default). The browser enforces this policy.
-  const settings = await MDReader.loadSettings();
+  // The same settings object feeds the CSP and the rendering, so both always agree on the list. If reading
+  // ever failed, the strictest policy (no remote site) is used for both.
+  const STRICT = { enabled: false, allow: [] };
+  const settings = await MDReader.loadSettings().catch(() => null);
   const meta = document.createElement('meta');
   meta.httpEquiv = 'Content-Security-Policy';
   meta.content = MDReader.contentCsp(settings);
@@ -30,7 +33,7 @@
   body.classList.add('mdr-page');
   const root = document.createElement('div');
   body.appendChild(root);
-  MDReader.mount(root, text, { fileName, docKey: location.href.split('#')[0], localImages: true }).catch(() => {
+  MDReader.mount(root, text, { fileName, docKey: location.href.split('#')[0], localImages: true, settings: settings || undefined, net: settings ? undefined : STRICT }).catch(() => {
     // Last resort: show the raw text rather than an empty page.
     const pre = document.createElement('pre');
     pre.textContent = text;
