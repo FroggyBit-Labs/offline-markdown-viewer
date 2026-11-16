@@ -1,12 +1,12 @@
 {
   "extDescription": {
-    "message": "Markdown- und Mermaid-Viewer für Chromium, offline. 100 % lokal und autark: kein Netzwerk, kein Konto, keine Telemetrie."
+    "message": "Markdown- und Mermaid-Viewer für Chromium, offline. Keine externen Abhängigkeiten: Sie entscheiden, was extern geladen wird."
   },
   "actionTitle": {
     "message": "Markdown-Viewer öffnen"
   },
   "welcome_intro": {
-    "message": "Markdown- und Mermaid-Darstellung, 100 % lokal: keine Datenübertragung, keine externen Ressourcen."
+    "message": "Markdown- und Mermaid-Darstellung ohne externe Abhängigkeiten. Externe Inhalte Ihrer Dokumente bleiben blockiert, bis Sie sie erlauben."
   },
   "drop_title": {
     "message": "Ziehen Sie eine .md-Datei hierher"
@@ -300,6 +300,114 @@
   },
   "blocked_remote": {
     "message": "Externe Ressource blockiert: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image": {
+    "message": "Externes Bild blockiert: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image_noalt": {
+    "message": "Externes Bild blockiert"
+  },
+  "image_removed": {
+    "message": "Bild nicht angezeigt: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "image_removed_noalt": {
+    "message": "Bild nicht angezeigt"
+  },
+  "local_image_unavailable": {
+    "message": "Lokales Bild in diesem Viewer nicht verfügbar: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "local_image_unavailable_noalt": {
+    "message": "Lokales Bild in diesem Viewer nicht verfügbar"
+  },
+  "local_image_hint": {
+    "message": "Öffnen Sie die Markdown-Datei direkt im Browser, um ihre lokalen Bilder anzuzeigen."
+  },
+  "net_btn_off": {
+    "message": "Externe Bilder: aus"
+  },
+  "net_btn_on": {
+    "message": "Externe Bilder: an ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_title": {
+    "message": "Externe Bilder"
+  },
+  "net_intro": {
+    "message": "Externe Bilder sind standardmäßig blockiert. Wenn Sie bestimmte Websites erlauben, können Bilder von dort geladen werden. Diese Websites sehen Ihre IP-Adresse und wann Sie ein Dokument öffnen. Die Erweiterung sendet nichts anderes."
+  },
+  "net_enable_label": {
+    "message": "Externe Bilder von den unten aufgeführten Websites erlauben"
+  },
+  "net_allow_label": {
+    "message": "Erlaubte Websites (eine pro Zeile)"
+  },
+  "net_allow_hint": {
+    "message": "Beispiele: https://example.org · https://*.example.org · https://example.org/images/ · http://192.168.1.10:8080 · \\\\nas01\\photos\\ (Netzwerkordner). Nur Adressen mit http://, https:// und \\\\server\\ werden akzeptiert. Ein * ist nur am Anfang eines Web-Hostnamens erlaubt. Alles, was nicht aufgeführt ist, bleibt blockiert."
+  },
+  "net_consent": {
+    "message": "Ich verstehe, dass die aufgeführten Websites meine IP-Adresse und den Zeitpunkt des Öffnens von Dokumenten sehen."
+  },
+  "net_consent_unc": {
+    "message": "Ich verstehe, dass Windows meine Anmeldedaten an die aufgeführten Netzwerkserver senden kann; ich liste daher nur vertrauenswürdige Server auf."
+  },
+  "net_need_consent_unc": {
+    "message": "Aktivieren Sie das zweite Kontrollkästchen: Netzwerkordner können Ihre Windows-Anmeldedaten erhalten."
+  },
+  "net_apply": {
+    "message": "Anwenden und neu laden"
+  },
+  "net_need_site": {
+    "message": "Fügen Sie mindestens eine Website hinzu oder schalten Sie die Option aus."
+  },
+  "net_need_consent": {
+    "message": "Aktivieren Sie das Kontrollkästchen, um zu bestätigen, dass Sie es verstanden haben."
+  },
+  "net_invalid": {
+    "message": "$P1$ Zeile(n) sind keine gültigen Adressen. Korrigieren oder entfernen Sie sie.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_viewer_unavailable": {
+    "message": "Externe Bilder sind nur verfügbar, wenn die Markdown-Datei direkt im Browser geöffnet wird (file://-Adresse). Dort setzt der Browser selbst Ihre Liste von Websites durch."
+  },
+  "net_hint_add": {
+    "message": "Um es anzuzeigen, fügen Sie diese Website unter „Externe Bilder“ hinzu."
+  },
+  "net_hint_off": {
+    "message": "Externe Bilder sind ausgeschaltet. Schalten Sie sie unter „Externe Bilder“ ein."
+  },
+  "contrast_all_ok": {
+    "message": "Alle Kontrastprüfungen sind erfüllt."
+  },
+  "contrast_some_fail": {
+    "message": "Kontrast unzureichend bei $P1$ von 5 Prüfungen.",
     "placeholders": {
       "P1": {
         "content": "$1"

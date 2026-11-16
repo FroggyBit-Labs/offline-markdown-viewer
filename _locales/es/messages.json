@@ -1,12 +1,12 @@
 {
   "extDescription": {
-    "message": "Visor de Markdown y Mermaid sin conexión para Chromium. 100 % local y autónomo: sin red, sin cuenta, sin telemetría."
+    "message": "Visor de Markdown y Mermaid sin conexión para Chromium. Sin dependencias remotas: usted decide qué contenido externo cargar."
   },
   "actionTitle": {
     "message": "Abrir el visor de Markdown"
   },
   "welcome_intro": {
-    "message": "Renderizado de Markdown y Mermaid 100 % local: sin envío de datos ni recursos remotos."
+    "message": "Renderizado de Markdown y Mermaid sin dependencias remotas. El contenido externo de sus documentos permanece bloqueado mientras no lo permita."
   },
   "drop_title": {
     "message": "Arrastre un archivo .md aquí"
@@ -300,6 +300,114 @@
   },
   "blocked_remote": {
     "message": "Recurso remoto bloqueado: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image": {
+    "message": "Imagen remota bloqueada: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image_noalt": {
+    "message": "Imagen remota bloqueada"
+  },
+  "image_removed": {
+    "message": "Imagen no mostrada: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "image_removed_noalt": {
+    "message": "Imagen no mostrada"
+  },
+  "local_image_unavailable": {
+    "message": "Imagen local no disponible en este visor: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "local_image_unavailable_noalt": {
+    "message": "Imagen local no disponible en este visor"
+  },
+  "local_image_hint": {
+    "message": "Abra el archivo Markdown directamente en el navegador para mostrar sus imágenes locales."
+  },
+  "net_btn_off": {
+    "message": "Imágenes remotas: no"
+  },
+  "net_btn_on": {
+    "message": "Imágenes remotas: sí ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_title": {
+    "message": "Imágenes remotas"
+  },
+  "net_intro": {
+    "message": "Las imágenes remotas están bloqueadas de forma predeterminada. Si permite algunos sitios, se podrán cargar las imágenes de esos sitios. Esos sitios verán su dirección IP y cuándo abre un documento. La extensión no envía nada más."
+  },
+  "net_enable_label": {
+    "message": "Permitir imágenes remotas de los sitios de la lista"
+  },
+  "net_allow_label": {
+    "message": "Sitios permitidos (uno por línea)"
+  },
+  "net_allow_hint": {
+    "message": "Ejemplos: https://example.org · https://*.example.org · https://example.org/images/ · http://192.168.1.10:8080 · \\\\nas01\\photos\\ (carpeta de red). Solo se aceptan direcciones http://, https:// y \\\\servidor\\. Un * solo se permite al principio de un nombre de host web. Todo lo que no figure en la lista sigue bloqueado."
+  },
+  "net_consent": {
+    "message": "Entiendo que los sitios de la lista verán mi dirección IP y cuándo abro documentos."
+  },
+  "net_consent_unc": {
+    "message": "Entiendo que Windows puede enviar mis datos de inicio de sesión a los servidores de red de la lista, por lo que solo enumero servidores de confianza."
+  },
+  "net_need_consent_unc": {
+    "message": "Marque la segunda casilla: las carpetas de red pueden recibir sus datos de inicio de sesión de Windows."
+  },
+  "net_apply": {
+    "message": "Aplicar y recargar"
+  },
+  "net_need_site": {
+    "message": "Añada al menos un sitio, o desactive la opción."
+  },
+  "net_need_consent": {
+    "message": "Marque la casilla para confirmar que lo entiende."
+  },
+  "net_invalid": {
+    "message": "$P1$ línea(s) no son direcciones válidas. Corríjalas o elimínelas.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_viewer_unavailable": {
+    "message": "Las imágenes remotas solo están disponibles cuando el archivo Markdown se abre directamente en el navegador (dirección file://). Allí, el propio navegador aplica su lista de sitios."
+  },
+  "net_hint_add": {
+    "message": "Para mostrarla, añada este sitio en «Imágenes remotas»."
+  },
+  "net_hint_off": {
+    "message": "Las imágenes remotas están desactivadas. Actívelas en «Imágenes remotas»."
+  },
+  "contrast_all_ok": {
+    "message": "Todas las comprobaciones de contraste son conformes."
+  },
+  "contrast_some_fail": {
+    "message": "Contraste insuficiente en $P1$ de 5 comprobaciones.",
     "placeholders": {
       "P1": {
         "content": "$1"

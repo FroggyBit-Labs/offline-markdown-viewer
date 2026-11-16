@@ -1,12 +1,12 @@
 {
   "extDescription": {
-    "message": "Lecteur Markdown et Mermaid hors ligne pour Chromium. 100 % local et autonome : sans réseau, sans compte, sans télémétrie."
+    "message": "Lecteur Markdown et Mermaid hors ligne pour Chromium. Aucune dépendance distante : vous décidez du contenu externe à charger."
   },
   "actionTitle": {
     "message": "Ouvrir le lecteur Markdown"
   },
   "welcome_intro": {
-    "message": "Rendu Markdown et Mermaid, 100 % local : aucun envoi de données, aucune ressource distante."
+    "message": "Rendu Markdown et Mermaid sans aucune dépendance distante. Le contenu externe de vos documents reste bloqué tant que vous ne l'autorisez pas."
   },
   "drop_title": {
     "message": "Glissez un fichier .md ici"
@@ -300,6 +300,114 @@
   },
   "blocked_remote": {
     "message": "Ressource distante bloquée : $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image": {
+    "message": "Image distante bloquée : $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image_noalt": {
+    "message": "Image distante bloquée"
+  },
+  "image_removed": {
+    "message": "Image non affichée : $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "image_removed_noalt": {
+    "message": "Image non affichée"
+  },
+  "local_image_unavailable": {
+    "message": "Image locale indisponible dans ce lecteur : $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "local_image_unavailable_noalt": {
+    "message": "Image locale indisponible dans ce lecteur"
+  },
+  "local_image_hint": {
+    "message": "Ouvrez le fichier Markdown directement dans le navigateur pour afficher ses images locales."
+  },
+  "net_btn_off": {
+    "message": "Images distantes : non"
+  },
+  "net_btn_on": {
+    "message": "Images distantes : oui ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_title": {
+    "message": "Images distantes"
+  },
+  "net_intro": {
+    "message": "Les images distantes sont bloquées par défaut. Si vous autorisez des sites, les images de ces sites pourront se charger. Ces sites verront votre adresse IP et le moment où vous ouvrez un document. L'extension n'envoie rien d'autre."
+  },
+  "net_enable_label": {
+    "message": "Autoriser les images distantes des sites listés ci-dessous"
+  },
+  "net_allow_label": {
+    "message": "Sites autorisés (un par ligne)"
+  },
+  "net_allow_hint": {
+    "message": "Exemples : https://example.org · https://*.example.org · https://example.org/images/ · http://192.168.1.10:8080 · \\\\nas01\\photos\\ (dossier réseau). Seules les adresses http://, https:// et \\\\serveur\\ sont acceptées. Un * n'est permis qu'au début d'un nom d'hôte web. Tout ce qui n'est pas listé reste bloqué."
+  },
+  "net_consent": {
+    "message": "Je comprends que les sites listés verront mon adresse IP et le moment où j'ouvre des documents."
+  },
+  "net_consent_unc": {
+    "message": "Je comprends que Windows peut envoyer mes informations de connexion aux serveurs réseau listés ; je ne liste donc que des serveurs de confiance."
+  },
+  "net_need_consent_unc": {
+    "message": "Cochez la deuxième case : les dossiers réseau peuvent recevoir vos informations de connexion Windows."
+  },
+  "net_apply": {
+    "message": "Appliquer et recharger"
+  },
+  "net_need_site": {
+    "message": "Ajoutez au moins un site, ou désactivez l'option."
+  },
+  "net_need_consent": {
+    "message": "Cochez la case pour confirmer que vous avez compris."
+  },
+  "net_invalid": {
+    "message": "$P1$ ligne(s) ne sont pas des adresses valides. Corrigez-les ou supprimez-les.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_viewer_unavailable": {
+    "message": "Les images distantes ne sont disponibles que lorsque le fichier Markdown est ouvert directement dans le navigateur (adresse file://). Là, le navigateur applique lui-même votre liste de sites."
+  },
+  "net_hint_add": {
+    "message": "Pour l'afficher, ajoutez ce site dans « Images distantes »."
+  },
+  "net_hint_off": {
+    "message": "Les images distantes sont désactivées. Activez-les dans « Images distantes »."
+  },
+  "contrast_all_ok": {
+    "message": "Tous les contrôles de contraste sont conformes."
+  },
+  "contrast_some_fail": {
+    "message": "Contraste insuffisant pour $P1$ contrôle(s) sur 5.",
     "placeholders": {
       "P1": {
         "content": "$1"

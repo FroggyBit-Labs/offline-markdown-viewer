@@ -14,14 +14,24 @@
   function normalizeUrl(val) {
     return String(val).replace(/[\t\n\r]/g, '').replace(/^[\u0000- ]+/, '');
   }
+  // A file: URL is local only when it has no host. file://host/share/x and file:////host/share/x
+  // (UNC) would make the browser open a network share, so they count as remote.
+  function isRemoteFile(v) {
+    const rest = v.slice(5).replace(/\\/g, '/');
+    if (/^\/{4,}/.test(rest)) return true;                    // file:////host/share (empty host + UNC path)
+    const m = /^\/\/([^/]*)/.exec(rest);                      // file://host/...
+    return !!m && m[1] !== '' && m[1].toLowerCase() !== 'localhost';
+  }
   function isRemote(val) {
     const v = normalizeUrl(val);
     if (/^[\\/]{2}/.test(v)) return true;
     const m = SCHEME.exec(v);
-    return !!m && !LOCAL_SCHEMES.test(m[1]);
+    if (!m) return false;
+    if (/^file$/i.test(m[1])) return isRemoteFile(v);
+    return !LOCAL_SCHEMES.test(m[1]);
   }
   // Ids set by the interface: a heading of the document must never reuse them.
-  const RESERVED_IDS = ['mdr-content', 'mdr-panel', 'mdr-pins'];
+  const RESERVED_IDS = ['mdr-content', 'mdr-panel', 'mdr-pins', 'mdr-net', 'mdr-net-list', 'mdr-net-hint'];
   const FRONT = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
   const MEDIA_ATTRS = ['src', 'poster', 'background'];
   let mermaidCounter = 0;
@@ -64,6 +74,130 @@
     legible: 'Verdana, Tahoma, "Trebuchet MS", sans-serif'
   };
   const HEX = /^#[0-9a-f]{6}$/i;
+
+  // ---------- Remote images (blocked by default, opt-in with a list of allowed sites) ----------
+  // The list lives under its own storage key, so a settings change in another tab can never switch it off
+  // or on by accident. It only takes effect on file:// pages, where the same list is also written into the
+  // page's Content-Security-Policy: the browser itself then refuses any other address, even if the code
+  // below were bypassed. Every line is validated strictly because it ends up inside a CSP.
+  const NET_KEY = 'omv-net';
+  const MAX_NET_ENTRIES = 50;
+  // A host name: labels of letters, digits and inner hyphens separated by dots (no leading or trailing hyphen).
+  const ALLOW_ENTRY = /^(https?):\/\/(\*\.)?([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*)(?::(\d{1,5}))?(\/[A-Za-z0-9\-._~%/]*)?$/i;
+  // Network shares (UNC): \\host\share\folder\  (or file://host/share/folder/). A host plus optional folders;
+  // no wildcard. They are never part of the CSP (the file: source already covers local files), so their
+  // enforcement is done by the extension's code only, and only for hosts the user lists explicitly.
+  const UNC_HOST = '[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*';
+  const UNC_SEG = /^[A-Za-z0-9 _\-.$()~%]+$/;
+  function splitUnc(rest) {      // "host/share/dir" -> { host, segs } or null (lowercase, validated)
+    const parts = String(rest).split('/');
+    const host = (parts.shift() || '').toLowerCase();
+    if (!new RegExp('^' + UNC_HOST + '$').test(host)) return null;
+    const segs = [];
+    for (let seg of parts) {
+      if (seg === '') continue;
+      try { seg = decodeURIComponent(seg); } catch (e) { return null; }
+      if (seg === '.' || seg === '..' || !UNC_SEG.test(seg)) return null;
+      segs.push(seg.toLowerCase());
+    }
+    return { host, segs };
+  }
+  // Recognizes a network-share address in an image source: \\host\share\x.jpg, file://host/share/x.jpg,
+  // file:////host/share/x.jpg. Returns null for anything else (local file:///C:/..., http, relative...).
+  function uncFromUrl(val) {
+    const v = normalizeUrl(val);
+    let rest = null;
+    if (/^\\\\/.test(v)) rest = v.slice(2).replace(/\\/g, '/');
+    else if (/^file:/i.test(v)) {
+      const r = v.slice(5).replace(/\\/g, '/');
+      if (/^\/{4,}/.test(r)) rest = r.replace(/^\/+/, '');
+      else {
+        const m = /^\/\/([^/]*)(\/.*)?$/.exec(r);
+        if (m && m[1] !== '' && m[1].toLowerCase() !== 'localhost') rest = m[1] + (m[2] || '');
+      }
+    }
+    return rest === null ? null : splitUnc(rest);
+  }
+  function uncToFileUrl(u) { return 'file://' + u.host + '/' + u.segs.map(encodeURIComponent).join('/'); }
+  function isAllowedUnc(u, net) {
+    if (!u || !net || !net.enabled) return false;
+    return net.allow.some((text) => {
+      const e = parseAllowEntry(text);
+      return !!e && e.kind === 'unc' && e.host === u.host && e.segs.every((s, i) => u.segs[i] === s);
+    });
+  }
+  // A Markdown image written with a Windows share, ![x](\\host\share\a.jpg), loses its backslashes when
+  // Markdown reads it (a backslash escapes the next one). Rewrite those destinations to file:// addresses
+  // before parsing. No line is added or removed, so line numbers stay exact.
+  function fixUncImages(text) {
+    return text.replace(/(!\[[^\]\n]*\]\()(<)?(\\\\[^)>\n]+)(>)?(\))/g, (m, open, lt, unc, gt, close) => {
+      // Written the Markdown way, with every backslash doubled (\\\\host\\share\\a.jpg): undo the doubling first.
+      const plain = /^\\\\\\\\/.test(unc) ? unc.replace(/\\\\/g, '\\') : unc;
+      const u = splitUnc(plain.slice(2).replace(/\\/g, '/'));
+      // An invalid share address (".." etc.) is replaced by a harmless unlisted one: it is shown as blocked,
+      // not as a broken relative image.
+      return open + '<' + (u ? uncToFileUrl(u) : 'file://invalid.invalid/blocked') + '>' + close;
+    });
+  }
+  function parseAllowEntry(line) {
+    const s = String(line).trim();
+    if (!s || s.length > 200) return null;
+    if (/^(?:\\\\|file:\/\/)/i.test(s)) {                           // network share
+      const u = uncFromUrl(s);
+      if (!u) return null;
+      return { kind: 'unc', host: u.host, segs: u.segs, text: '\\\\' + u.host + u.segs.map((g) => '\\' + g).join('') + '\\' };
+    }
+    const m = ALLOW_ENTRY.exec(s);
+    if (!m) return null;
+    const scheme = m[1].toLowerCase(), wild = !!m[2], host = m[3].toLowerCase(), port = m[4] || '', path = m[5] || '';
+    if (wild && !host.includes('.')) return null;                 // "*.com" would cover a whole top-level domain
+    if (wild && /^\d+(?:\.\d+){3}$/.test(host)) return null;     // no wildcard on an IP address
+    if (port && (Number(port) < 1 || Number(port) > 65535)) return null;
+    if (path.split('/').includes('..')) return null;
+    return { kind: 'web', scheme, wild, host, port, path, text: scheme + '://' + (wild ? '*.' : '') + host + (port ? ':' + port : '') + path };
+  }
+  function normalizeNet(raw) {
+    const allow = [];
+    const seen = new Set();
+    if (raw && Array.isArray(raw.allow)) {
+      for (const line of raw.allow) {
+        const e = parseAllowEntry(line);
+        if (e && !seen.has(e.text)) { seen.add(e.text); allow.push(e.text); if (allow.length >= MAX_NET_ENTRIES) break; }
+      }
+    }
+    return { enabled: !!(raw && raw.enabled === true && allow.length), allow };
+  }
+  // Same matching rules as a CSP source list: scheme and port must match, "*." covers sub-domains only,
+  // an entry ending with "/" is a path prefix, otherwise the path must match exactly.
+  function isAllowedRemote(val, net) {
+    if (!net || !net.enabled) return false;
+    let u;
+    try { u = new URL(normalizeUrl(val)); } catch (e) { return false; }     // protocol-relative values fail here
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    if (u.username || u.password) return false;
+    const scheme = u.protocol.slice(0, -1);
+    const host = u.hostname.toLowerCase();
+    const port = u.port || (scheme === 'https' ? '443' : '80');
+    return net.allow.some((text) => {
+      const e = parseAllowEntry(text);
+      if (!e || e.kind !== 'web' || e.scheme !== scheme) return false;
+      if ((e.port || (scheme === 'https' ? '443' : '80')) !== port) return false;
+      if (e.wild ? !host.endsWith('.' + e.host) : host !== e.host) return false;
+      if (!e.path) return true;
+      return e.path.endsWith('/') ? u.pathname.startsWith(e.path) : u.pathname === e.path;
+    });
+  }
+  // CSP of a file:// page: local and embedded images, plus the sites the user listed (when enabled).
+  function contentCsp(settings) {
+    // Only web addresses go into the CSP; network shares cannot be told apart from local files by a CSP.
+    const hosts = (settings && settings.net && settings.net.enabled ? settings.net.allow : []).filter((t) => {
+      const e = parseAllowEntry(t);
+      return !!e && e.kind === 'web';
+    });
+    return "default-src 'none'; img-src file: data: blob:" + hosts.map((h) => ' ' + h).join('') +
+      "; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'";
+  }
+  let netPolicy = { enabled: false, allow: [] };
 
   function clamp(v, min, max, def) {
     v = Number(v);
@@ -111,12 +245,28 @@
       try { chrome.storage.local.get(key, (r) => resolve(r ? (key === null ? r : r[key]) : undefined)); } catch (e) { resolve(undefined); }
     });
   }
+  // Values this tab has written recently, per key (serialized). The storage change events caused by our
+  // own writes arrive later and must not be applied back: if the user acts between two echoes, an old
+  // echo would restore an outdated state and the next write would erase the newer change.
+  const ownWrites = new Map();
+  function noteOwnWrite(key, value) {
+    const list = ownWrites.get(key) || [];
+    list.push(JSON.stringify(value === undefined ? null : value));
+    if (list.length > 50) list.shift();
+    ownWrites.set(key, list);
+  }
+  function isOwnWrite(key, value) {
+    const list = ownWrites.get(key);
+    return !!list && list.includes(JSON.stringify(value === undefined ? null : value));
+  }
   function storageSet(key, value) {
+    noteOwnWrite(key, value);
     return new Promise((resolve) => {
       try { chrome.storage.local.set({ [key]: value }, () => resolve()); } catch (e) { resolve(); /* storage unavailable */ }
     });
   }
   function storageRemove(keys) {
+    [].concat(keys).forEach((k) => noteOwnWrite(k, null));
     return new Promise((resolve) => {
       try { chrome.storage.local.remove(keys, () => resolve()); } catch (e) { resolve(); }
     });
@@ -130,9 +280,12 @@
 
   async function loadSettings() {
     const raw = await storageGet(KEY);
-    return raw ? normalize(raw) : defaults();
+    const s = raw ? normalize(raw) : defaults();
+    s.net = normalizeNet(await storageGet(NET_KEY));     // separate key: never overwritten by appearance changes
+    return s;
   }
   function saveSettings(s) { return queueWrite(() => storageSet(KEY, normalize(s))); }
+  function saveNet(net) { return queueWrite(() => storageSet(NET_KEY, normalizeNet(net))); }
 
   // Pins: one storage key per document ("omv-pins:<document>" -> [ { line, text, t } ]).
   // Two tabs on two different documents therefore never write the same key.
@@ -152,8 +305,11 @@
     const value = cleanPins(pins);
     return queueWrite(async () => {
       if (!value.length) return storageRemove(key);
+      const isNew = (await storageGet(key)) === undefined;
       await storageSet(key, value);
       // Beyond MAX_DOCS documents, the least recently used ones are forgotten.
+      // Only checked when a new document is added: it reads all pins, so not on every click.
+      if (!isNew) return;
       const all = (await storageGet(null)) || {};
       const keys = Object.keys(all).filter((k) => k.startsWith(PINS_KEY + ':'));
       if (keys.length > MAX_DOCS) {
@@ -183,10 +339,51 @@
     FORBID_ATTR: ['style', 'srcset', 'data-line', 'data-first', 'data-ln']
   };
 
+  // Local images. On a file:// page, relative paths and local absolute paths (file:///C:/x.png, C:\x.png,
+  // C:/x.png) are shown: they never touch the network. The sanitizer would remove file: and drive-letter
+  // values, so for <img src> only they are validated here and kept. Network shares (\\host\x,
+  // file://host/x) are never allowed: opening one can leak the user's Windows credentials (NTLM).
+  // The viewer page (extension origin) cannot load local files, so its local images get a placeholder.
+  let allowLocalFiles = false;
+  const unavailableImages = new WeakSet();
+  const allowedUnc = new WeakSet();
+  // Tooltip of a blocked remote image: what was blocked, and how to allow it (file:// pages only).
+  function blockedTitle(val) {
+    const hint = allowLocalFiles ? msg(netPolicy.enabled ? 'net_hint_add' : 'net_hint_off') : '';
+    return msg('blocked_remote', val) + (hint ? ' — ' + hint : '');
+  }
+
   let hooked = false;
   function installHooks() {
     if (hooked) return;
     hooked = true;
+    DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+      if (node.tagName !== 'IMG' || data.attrName !== 'src') return;
+      let v = normalizeUrl(data.attrValue);
+      if (/^(?:%5C|\\){2}/i.test(v)) v = v.replace(/%5C/gi, '\\');      // Markdown percent-encodes backslashes
+      // Network share (\\host\share\x.jpg, file://host/share/x.jpg): shown only on a file:// page, only if the
+      // user listed that host, and always rewritten to a clean file://host/... address. Otherwise blocked.
+      if (/^\\\\/.test(v) || (/^file:/i.test(v) && isRemoteFile(v))) {
+        const unc = uncFromUrl(v);
+        if (unc && allowLocalFiles && isAllowedUnc(unc, netPolicy)) {
+          node.setAttribute('src', uncToFileUrl(unc));
+          allowedUnc.add(node);          // the final remote-content check below must not block it again
+          data.forceKeepAttr = true;
+          return;
+        }
+        data.keepAttr = false;
+        node.classList.add('mdr-blocked');
+        node.setAttribute('title', blockedTitle(v));
+        return;
+      }
+      let local = null;
+      if (/^[a-zA-Z]:[\\/]/.test(v)) local = 'file:///' + encodeURI(v.replace(/\\/g, '/'));   // Windows drive path
+      else if (/^file:/i.test(v) && !isRemoteFile(v)) local = v;                                // file:/// (no host)
+      if (local === null) return;
+      // forceKeepAttr keeps the attribute as it already is in the DOM: the rewritten value is set directly.
+      if (allowLocalFiles) { node.setAttribute('src', local); data.forceKeepAttr = true; }
+      else { data.keepAttr = false; unavailableImages.add(node); }
+    });
     DOMPurify.addHook('afterSanitizeAttributes', (node) => {
       if (node.tagName === 'A') {
         const href = normalizeUrl(node.getAttribute('href') || '');
@@ -198,13 +395,26 @@
       }
       // Every remote resource is neutralized (images, video, audio, sources, posters, backgrounds).
       for (const attr of MEDIA_ATTRS) {
+        if (attr === 'src' && allowedUnc.has(node)) continue;      // network share the user listed
         const val = node.getAttribute(attr);
         if (val !== null && isRemote(val)) {
+          // The only remote content ever allowed: an <img> whose address matches the user's list.
+          if (node.tagName === 'IMG' && attr === 'src' && isAllowedRemote(val, netPolicy)) {
+            node.setAttribute('referrerpolicy', 'no-referrer');      // the site learns nothing about the document
+            node.setAttribute('loading', 'lazy');
+            continue;
+          }
           node.removeAttribute(attr);
           node.classList.add('mdr-blocked');
-          node.setAttribute('title', msg('blocked_remote', val));
+          node.setAttribute('title', blockedTitle(val));
         }
       }
+      if (node.tagName === 'IMG' && !allowLocalFiles) {
+        // Viewer page: a relative path would resolve against the extension, not the file's folder.
+        const s = node.getAttribute('src');
+        if (s !== null && !/^(?:data|blob):/i.test(normalizeUrl(s)) && !node.classList.contains('mdr-blocked')) unavailableImages.add(node);
+      }
+      if (unavailableImages.has(node)) { node.removeAttribute('src'); node.classList.add('mdr-unavailable'); }
       if (node.id && RESERVED_IDS.includes(node.id)) node.removeAttribute('id');
       if (node.tagName === 'IMG' && !node.hasAttribute('alt')) node.setAttribute('alt', '');
       if (node.tagName === 'INPUT') {
@@ -294,6 +504,7 @@
   function renderBlocks(text, article) {
     const m = FRONT.exec(text);
     if (m) text = '```yaml\n' + m[1] + '\n```\n' + text.slice(m[0].length);   // same number of lines
+    text = fixUncImages(text);                  // ![x](\\host\share\a.jpg) -> file://host/share/a.jpg (same lines)
     const opts = { gfm: true, breaks: false };
     const tokens = marked.lexer(text, opts);
     const attr = 'data-omv-' + Math.random().toString(36).slice(2, 10);
@@ -324,6 +535,24 @@
       }
     });
     marks.forEach((mark) => mark.remove());
+    // An image that cannot be shown would appear as a broken-image icon, which looks like an error.
+    // Replace it with a readable, translated placeholder (the alt text stays available):
+    //   remote  = blocked remote resource; local = local image the viewer page cannot load;
+    //   removed = image whose address the sanitizer removed (javascript:, network share...).
+    tpl.content.querySelectorAll('img.mdr-blocked, img.mdr-unavailable, img:not([src])').forEach((img) => {
+      const alt = img.getAttribute('alt') || '';
+      const kind = img.classList.contains('mdr-blocked') ? 'remote' : (img.classList.contains('mdr-unavailable') ? 'local' : 'removed');
+      const key = { remote: 'blocked_image', local: 'local_image_unavailable', removed: 'image_removed' }[kind];
+      const label = alt ? msg(key, alt) : msg(key + '_noalt');
+      const ph = document.createElement('span');
+      ph.className = 'mdr-blocked-media';
+      ph.dataset.kind = kind;
+      ph.setAttribute('role', 'img');
+      ph.setAttribute('aria-label', label);
+      ph.title = kind === 'local' ? msg('local_image_hint') : (img.getAttribute('title') || '');
+      ph.textContent = label;
+      img.replaceWith(ph);
+    });
     article.replaceChildren(tpl.content);
   }
 
@@ -487,6 +716,7 @@
 
   async function mount(root, text, opts) {
     opts = opts || {};
+    allowLocalFiles = opts.localImages === true;     // true only on file:// pages (content script)
     installHooks();
     const previous = mounted.get(root);
     if (previous) previous();
@@ -505,6 +735,8 @@
     mounted.set(root, dispose);
 
     const settings = await loadSettings();
+    // The list is only honored on file:// pages, where the page CSP enforces it as well.
+    netPolicy = allowLocalFiles ? settings.net : { enabled: false, allow: [] };
     const docKey = opts.docKey || opts.fileName || 'document';
     let pins = await loadPins(docKey);
     if (ac.signal.aborted) return;     // replaced while the settings were loading
@@ -531,7 +763,10 @@
     btnLook.setAttribute('aria-controls', 'mdr-panel');
     const btnPrint = el('button', { type: 'button', textContent: msg('btn_print') });
     btnPrint.addEventListener('click', () => window.print());
-    const bar = el('header', { className: 'mdr-bar' }, [title, btnResume, btnPins, btnNum, btnSrc, btnTheme, btnLook, btnPrint]);
+    const btnNet = el('button', { type: 'button', textContent: settings.net.enabled && netPolicy.enabled ? msg('net_btn_on', settings.net.allow.length) : msg('net_btn_off') });
+    btnNet.setAttribute('aria-expanded', 'false');
+    btnNet.setAttribute('aria-controls', 'mdr-net');
+    const bar = el('header', { className: 'mdr-bar' }, [title, btnResume, btnPins, btnNum, btnSrc, btnTheme, btnNet, btnLook, btnPrint]);
 
     // Appearance panel
     const selPreset = el('select');
@@ -554,16 +789,20 @@
     Object.keys(FONTS).forEach((k) => selFont.append(el('option', { value: k, textContent: msg('font_' + k) })));
     const chkSpacing = el('input', { type: 'checkbox' });
     const spacingField = el('label', { className: 'mdr-check' }, [chkSpacing, el('span', { textContent: msg('spacing_label') })]);
+    // The contrast list is redrawn on every color change while dragging: it is not a live region
+    // (a screen reader would be flooded). A short summary is announced once, when a choice is confirmed.
     const contrastBox = el('div', { className: 'mdr-contrast' });
-    contrastBox.setAttribute('role', 'status');
-    contrastBox.setAttribute('aria-live', 'polite');
+    const announce = el('div', { className: 'mdr-sr-only' });
+    announce.setAttribute('role', 'status');
+    announce.setAttribute('aria-live', 'polite');
     const btnReset = el('button', { type: 'button', textContent: msg('btn_reset') });
     const panel = el('div', { className: 'mdr-panel', id: 'mdr-panel', hidden: true }, [
       field(msg('field_preset'), selPreset), colorGrid, contrastBox,
       field(msg('field_size'), rngSize), field(msg('field_leading'), rngLine), field(msg('field_width'), rngWidth),
       field(msg('field_font'), selFont), spacingField, btnReset
     ]);
-    panel.setAttribute('role', 'dialog');
+    // Panels opened by a toggle button (aria-expanded) are regions, not modal dialogs: nothing blocks the page.
+    panel.setAttribute('role', 'region');
     panel.setAttribute('aria-label', msg('btn_appearance'));
 
     // Pins panel
@@ -574,8 +813,53 @@
       el('p', { className: 'mdr-hint', textContent: msg('pins_hint') }),
       pinsList, btnClear
     ]);
-    pinsPanel.setAttribute('role', 'dialog');
+    pinsPanel.setAttribute('role', 'region');
     pinsPanel.setAttribute('aria-label', msg('pins_title'));
+
+    // Remote images panel. Off by default; the list and the consent are required to turn it on.
+    const netPanel = el('div', { className: 'mdr-panel', id: 'mdr-net', hidden: true }, [el('strong', { textContent: msg('net_title') })]);
+    netPanel.setAttribute('role', 'region');
+    netPanel.setAttribute('aria-label', msg('net_title'));
+    if (!allowLocalFiles) {
+      netPanel.append(el('p', { className: 'mdr-hint', textContent: msg('net_viewer_unavailable') }));
+    } else {
+      const chkNet = el('input', { type: 'checkbox', checked: settings.net.enabled });
+      const txtAllow = el('textarea', { id: 'mdr-net-list', rows: 5, spellcheck: false, value: settings.net.allow.join('\n') });
+      txtAllow.setAttribute('aria-describedby', 'mdr-net-hint');
+      const chkConsent = el('input', { type: 'checkbox' });
+      // Extra consent, shown only when the list contains a network share: Windows may send the user's sign-in
+      // details (NTLM) to that server when the image is requested.
+      const chkConsentUnc = el('input', { type: 'checkbox' });
+      const uncConsent = el('label', { className: 'mdr-check', hidden: true }, [chkConsentUnc, el('span', { textContent: msg('net_consent_unc') })]);
+      const hasUnc = () => txtAllow.value.split(/\r?\n/).some((l) => { const e = parseAllowEntry(l); return !!e && e.kind === 'unc'; });
+      txtAllow.addEventListener('input', () => { uncConsent.hidden = !hasUnc(); });
+      uncConsent.hidden = !hasUnc();
+      const netStatus = el('p', { className: 'mdr-net-status' });
+      netStatus.setAttribute('role', 'status');
+      netStatus.setAttribute('aria-live', 'polite');
+      const btnApply = el('button', { type: 'button', textContent: msg('net_apply') });
+      btnApply.addEventListener('click', async () => {
+        const lines = txtAllow.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+        const list = [];
+        let invalid = 0;
+        for (const line of lines) { const e = parseAllowEntry(line); if (e) list.push(e.text); else invalid++; }
+        if (invalid) { netStatus.textContent = msg('net_invalid', invalid); return; }       // never ignore a line silently
+        const on = chkNet.checked;
+        if (on && !list.length) { netStatus.textContent = msg('net_need_site'); return; }   // no "allow everything"
+        if (on && !chkConsent.checked) { netStatus.textContent = msg('net_need_consent'); return; }
+        if (on && hasUnc() && !chkConsentUnc.checked) { netStatus.textContent = msg('net_need_consent_unc'); return; }
+        await saveNet({ enabled: on, allow: list });
+        location.reload();            // the page CSP is set at load: reload to apply the new list
+      });
+      netPanel.append(
+        el('p', { className: 'mdr-hint', textContent: msg('net_intro') }),
+        el('label', { className: 'mdr-check' }, [chkNet, el('span', { textContent: msg('net_enable_label') })]),
+        el('label', { className: 'mdr-block' }, [el('span', { textContent: msg('net_allow_label') }), txtAllow]),
+        el('p', { className: 'mdr-hint', id: 'mdr-net-hint', textContent: msg('net_allow_hint') }),
+        el('label', { className: 'mdr-check' }, [chkConsent, el('span', { textContent: msg('net_consent') })]),
+        uncConsent,
+        btnApply, netStatus);
+    }
 
     // Content
     const nav = el('nav', { className: 'mdr-toc' });
@@ -586,10 +870,12 @@
     const gutter = el('div', { className: 'mdr-gutter' });
     gutter.setAttribute('role', 'group');
     gutter.setAttribute('aria-label', msg('gutter_label'));
-    const main = el('main', { id: 'mdr-content' }, [gutter, article, source]);
+    // The gutter comes after the content in the DOM: it is positioned with CSS, and a screen reader
+    // must not read hundreds of line buttons before reaching the text.
+    const main = el('main', { id: 'mdr-content' }, [article, source, gutter]);
     main.tabIndex = -1;
     const layout = el('div', { className: 'mdr-layout' }, [nav, main]);
-    root.append(skip, bar, panel, pinsPanel, layout);
+    root.append(skip, bar, panel, pinsPanel, netPanel, layout, announce);
 
     let showSource = false;
     let sourceBuilt = false;
@@ -597,6 +883,10 @@
     const buttons = new Map();   // line -> button
 
     // ----- Contrast -----
+    let contrastFails = 0;
+    function announceContrast() {
+      announce.textContent = contrastFails ? msg('contrast_some_fail', contrastFails) : msg('contrast_all_ok');
+    }
     function updateContrast() {
       const c = settings.colors;
       const checks = [
@@ -608,9 +898,11 @@
       ];
       contrastBox.replaceChildren(el('strong', { textContent: msg('contrast_title') }));
       const ul = el('ul');
+      contrastFails = 0;
       checks.forEach(([labelKey, a, b, min]) => {
         const r = ratio(a, b);
         const ok = r >= min;
+        if (!ok) contrastFails++;
         const verdict = ok ? msg('contrast_pass') : msg('contrast_fail', min);
         ul.append(el('li', { className: ok ? 'ok' : 'ko', textContent: (ok ? '✔ ' : '✖ ') + msg('contrast_line', msg(labelKey), r.toFixed(1), verdict) }));
       });
@@ -666,11 +958,17 @@
     function layoutGutter() {
       const visible = !showSource ? !article.hidden : !source.hidden;
       if (!visible) return;
+      // Nothing to place while no line number or pin is shown (saves work on very long files).
+      if (!settings.lineNumbers && pins.length === 0) return;
       const base = main.getBoundingClientRect().top;
-      const tops = targets.map((t) => t.node.getBoundingClientRect().top - base);
+      const tops = targets.map((t) => (t.node.getClientRects().length ? t.node.getBoundingClientRect().top - base : null));
       targets.forEach((t, i) => {
         const b = buttons.get(t.line);
-        if (b) b.style.top = tops[i] + 'px';
+        if (!b) return;
+        // A node without a box (content of a closed <details>) has no position: hide its button.
+        if (tops[i] === null) { b.style.display = 'none'; return; }
+        b.style.display = '';
+        b.style.top = tops[i] + 'px';
       });
     }
     let layoutQueued = false;
@@ -683,6 +981,7 @@
     function refreshMarks() {
       const gutterOn = settings.lineNumbers || pins.length > 0;
       main.classList.toggle('mdr-has-gutter', gutterOn);
+      gutter.hidden = !gutterOn;     // out of the accessibility tree while it shows nothing
       targets.forEach((t) => {
         const pinned = !!pinOf(t.line);
         t.node.classList.toggle('mdr-pinned', pinned);
@@ -728,7 +1027,7 @@
     }
 
     gutter.addEventListener('keydown', (e) => {
-      const list = Array.from(gutter.querySelectorAll('.mdr-pin')).filter((b) => !b.hidden);
+      const list = Array.from(gutter.querySelectorAll('.mdr-pin')).filter((b) => !b.hidden && b.style.display !== 'none');
       const i = list.indexOf(document.activeElement);
       if (i < 0) return;
       let j = -1;
@@ -812,10 +1111,15 @@
       settings.preset = name;
       Object.assign(settings.colors, Object.fromEntries(COLORS.map((k) => [k, PRESETS[name][k]])));
       persist();
+      updateContrast();
+      announceContrast();
       return render();
     }
 
-    selPreset.addEventListener('change', () => { if (own(PRESETS, selPreset.value)) setPreset(selPreset.value); });
+    selPreset.addEventListener('change', () => {
+      if (own(PRESETS, selPreset.value)) setPreset(selPreset.value);
+      else if (selPreset.value === 'custom') { settings.preset = 'custom'; persist(); }   // keeps the current colors
+    });
     btnTheme.addEventListener('click', () => setPreset(isDarkColor(settings.colors.bg) ? 'light' : 'dark'));
     btnReset.addEventListener('click', () => {
       Object.assign(settings, { fontSize: 16, lineHeight: 16, width: 900, font: 'sans', spacing: false });
@@ -830,7 +1134,7 @@
         root.style.setProperty('--' + k, settings.colors[k]);
         updateContrast();
       });
-      colorInputs[k].addEventListener('change', () => { persist(); render(); });
+      colorInputs[k].addEventListener('change', () => { persist(); announceContrast(); render(); });
     });
     function range(input, key, min, max, def, cssVar, fmt) {
       input.addEventListener('input', () => { settings[key] = clamp(input.value, min, max, def); root.style.setProperty(cssVar, fmt(settings[key])); queueLayout(); });
@@ -851,7 +1155,7 @@
     });
 
     // Only one panel open at a time
-    const panels = [[panel, btnLook], [pinsPanel, btnPins]];
+    const panels = [[panel, btnLook], [pinsPanel, btnPins], [netPanel, btnNet]];
     function togglePanel(p, open, focus) {
       panels.forEach(([pp, bb]) => {
         const o = pp === p ? open : false;
@@ -859,12 +1163,13 @@
         bb.setAttribute('aria-expanded', String(o));
       });
       if (focus !== false) {
-        if (open) (p.querySelector('select, a, button') || p).focus();
+        if (open) (p.querySelector('select, a, input, textarea, button') || p).focus();
         else panels.find(([pp]) => pp === p)[1].focus();
       }
     }
     btnLook.addEventListener('click', () => togglePanel(panel, panel.hidden));
     btnPins.addEventListener('click', () => togglePanel(pinsPanel, pinsPanel.hidden));
+    btnNet.addEventListener('click', () => togglePanel(netPanel, netPanel.hidden));
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
       panels.forEach(([pp]) => { if (!pp.hidden) togglePanel(pp, false); });
@@ -897,7 +1202,7 @@
     const myPinsKey = pinsKey(docKey);
     onStorage = (changes, area) => {
       if (area !== 'local' || ac.signal.aborted) return;
-      if (changes[KEY] && changes[KEY].newValue) {
+      if (changes[KEY] && changes[KEY].newValue && !isOwnWrite(KEY, changes[KEY].newValue)) {
         const next = normalize(changes[KEY].newValue);
         if (JSON.stringify(next) !== JSON.stringify(normalize(settings))) {
           const colorsChanged = JSON.stringify(next.colors) !== JSON.stringify(settings.colors) || next.font !== settings.font;
@@ -906,7 +1211,7 @@
           else { applyStyle(); refreshMarks(); }
         }
       }
-      if (changes[myPinsKey]) {
+      if (changes[myPinsKey] && !isOwnWrite(myPinsKey, changes[myPinsKey].newValue)) {
         const next = cleanPins(changes[myPinsKey].newValue);
         if (JSON.stringify(next) !== JSON.stringify(pins)) { pins = next; refreshMarks(); }
       }
@@ -916,5 +1221,11 @@
     return render();
   }
 
-  global.MDReader = { mount };
+  // Releases a mount (listeners, observer, storage subscription) without mounting anything new.
+  function unmount(root) {
+    const release = mounted.get(root);
+    if (release) release();
+  }
+
+  global.MDReader = { mount, unmount, loadSettings, contentCsp };
 })(globalThis);

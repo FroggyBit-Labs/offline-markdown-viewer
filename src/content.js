@@ -1,7 +1,7 @@
 'use strict';
 
 // Automatic rendering of .md files opened over file:// (requires "Allow access to file URLs").
-(function () {
+(async function () {
   if (!/^text\/(plain|markdown|x-markdown)$/i.test(document.contentType || '')) return;
   const body = document.body;
   if (!body || body.children.length !== 1 || body.firstElementChild.tagName !== 'PRE') return;
@@ -13,10 +13,12 @@
   let fileName;
   try { fileName = decodeURIComponent(rawName); } catch (e) { fileName = rawName; }
 
-  // Network lockdown of the page: no remote resource, no page script.
+  // Network lockdown of the page: no page script, and only local or embedded images, plus the sites the user
+  // explicitly listed in "Remote images" (empty and switched off by default). The browser enforces this policy.
+  const settings = await MDReader.loadSettings();
   const meta = document.createElement('meta');
   meta.httpEquiv = 'Content-Security-Policy';
-  meta.content = "default-src 'none'; img-src file: data: blob:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'";
+  meta.content = MDReader.contentCsp(settings);
   document.head.appendChild(meta);
 
   const vp = document.createElement('meta');
@@ -28,7 +30,7 @@
   body.classList.add('mdr-page');
   const root = document.createElement('div');
   body.appendChild(root);
-  MDReader.mount(root, text, { fileName, docKey: location.href.split('#')[0] }).catch(() => {
+  MDReader.mount(root, text, { fileName, docKey: location.href.split('#')[0], localImages: true }).catch(() => {
     // Last resort: show the raw text rather than an empty page.
     const pre = document.createElement('pre');
     pre.textContent = text;

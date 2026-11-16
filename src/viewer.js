@@ -16,6 +16,7 @@
 
   function showError(text) {
     welcome.hidden = false;
+    MDReader.unmount(root);      // release the previous document's listeners before clearing the page
     root.replaceChildren();
     root.className = '';
     error.textContent = text;

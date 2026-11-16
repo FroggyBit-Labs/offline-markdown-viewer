@@ -1,12 +1,12 @@
 {
   "extDescription": {
-    "message": "Offline Markdown and Mermaid viewer for Chromium browsers. 100% local and self-contained: no network, no account, no telemetry."
+    "message": "Offline Markdown and Mermaid viewer for Chromium. No remote dependencies: you decide what external content to load."
   },
   "actionTitle": {
     "message": "Open the Markdown viewer"
   },
   "welcome_intro": {
-    "message": "Markdown and Mermaid rendering, 100% local: no data sent, no remote resources."
+    "message": "Markdown and Mermaid rendering with no remote dependencies. External content in your documents stays blocked unless you allow it."
   },
   "drop_title": {
     "message": "Drop a .md file here"
@@ -300,6 +300,114 @@
   },
   "blocked_remote": {
     "message": "Remote resource blocked: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image": {
+    "message": "Remote image blocked: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "blocked_image_noalt": {
+    "message": "Remote image blocked"
+  },
+  "image_removed": {
+    "message": "Image not shown: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "image_removed_noalt": {
+    "message": "Image not shown"
+  },
+  "local_image_unavailable": {
+    "message": "Local image not available in this viewer: $P1$",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "local_image_unavailable_noalt": {
+    "message": "Local image not available in this viewer"
+  },
+  "local_image_hint": {
+    "message": "Open the Markdown file directly in the browser to show its local images."
+  },
+  "net_btn_off": {
+    "message": "Remote images: off"
+  },
+  "net_btn_on": {
+    "message": "Remote images: on ($P1$)",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_title": {
+    "message": "Remote images"
+  },
+  "net_intro": {
+    "message": "Remote images are blocked by default. If you allow some sites, images from those sites can load. Those sites will see your IP address and when you open a document. The extension sends nothing else."
+  },
+  "net_enable_label": {
+    "message": "Allow remote images from the sites listed below"
+  },
+  "net_allow_label": {
+    "message": "Allowed sites (one per line)"
+  },
+  "net_allow_hint": {
+    "message": "Examples: https://example.org · https://*.example.org · https://example.org/images/ · http://192.168.1.10:8080 · \\\\nas01\\photos\\ (network folder). Only http://, https:// and \\\\server\\ addresses are accepted. A * is allowed only at the start of a web host name. Anything not listed stays blocked."
+  },
+  "net_consent": {
+    "message": "I understand that the listed sites will see my IP address and when I open documents."
+  },
+  "net_consent_unc": {
+    "message": "I understand that Windows may send my sign-in details to the listed network servers, so I only list servers I trust."
+  },
+  "net_need_consent_unc": {
+    "message": "Tick the second box: network folders can receive your Windows sign-in details."
+  },
+  "net_apply": {
+    "message": "Apply and reload"
+  },
+  "net_need_site": {
+    "message": "Add at least one site, or turn the option off."
+  },
+  "net_need_consent": {
+    "message": "Tick the box to confirm you understand."
+  },
+  "net_invalid": {
+    "message": "$P1$ line(s) are not valid addresses. Fix or remove them.",
+    "placeholders": {
+      "P1": {
+        "content": "$1"
+      }
+    }
+  },
+  "net_viewer_unavailable": {
+    "message": "Remote images are only available when the Markdown file is opened directly in the browser (a file:// address). There, the browser itself enforces your list of sites."
+  },
+  "net_hint_add": {
+    "message": "To show it, add this site in “Remote images”."
+  },
+  "net_hint_off": {
+    "message": "Remote images are off. Turn them on in “Remote images”."
+  },
+  "contrast_all_ok": {
+    "message": "All contrast checks pass."
+  },
+  "contrast_some_fail": {
+    "message": "Contrast insufficient on $P1$ of 5 checks.",
     "placeholders": {
       "P1": {
         "content": "$1"
